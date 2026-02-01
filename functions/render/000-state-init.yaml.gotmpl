@@ -1,0 +1,80 @@
+# code: language=yaml
+#
+# Initialize $state with spec defaults
+#
+
+{{- $xr := getCompositeResource . }}
+{{- $spec := $xr.spec | default dict }}
+{{- $metadata := $xr.metadata | default dict }}
+
+# ==============================================================================
+# Core defaults
+# ==============================================================================
+{{- $name := $metadata.name | default "external-dns" }}
+{{- $clusterName := $spec.clusterName | default $name }}
+{{- $namespace := $spec.namespace | default "external-dns" }}
+{{- $managementPolicies := $spec.managementPolicies | default (list "*") }}
+
+# Labels
+{{- $defaultLabels := dict
+  "hops.ops.com.ai/managed" "true"
+  "hops.ops.com.ai/externaldns" $name
+}}
+{{- $labels := merge $defaultLabels ($spec.labels | default dict) }}
+
+# ==============================================================================
+# Provider config refs
+# ==============================================================================
+{{- $helmProviderConfigRef := $spec.helmProviderConfigRef | default dict }}
+{{- $helmProviderConfigRef = dict
+  "name" ($helmProviderConfigRef.name | default $clusterName)
+  "kind" ($helmProviderConfigRef.kind | default "ProviderConfig")
+}}
+
+{{- $awsProviderConfigRef := $spec.awsProviderConfigRef | default dict }}
+{{- $awsProviderConfigRef = dict
+  "name" ($awsProviderConfigRef.name | default "default")
+  "kind" ($awsProviderConfigRef.kind | default "ProviderConfig")
+}}
+
+# ==============================================================================
+# AWS defaults
+# ==============================================================================
+{{- $aws := $spec.aws | default dict }}
+{{- $awsRegion := $aws.region }}
+
+# Default tags
+{{- $defaultTags := dict
+  "hops.ops.com.ai/managed" "true"
+  "hops.ops.com.ai/externaldns" $name
+}}
+{{- $awsTags := merge $defaultTags ($aws.tags | default dict) }}
+
+# ==============================================================================
+# Initialize $state
+# ==============================================================================
+{{- $state := dict
+  "name" $name
+  "clusterName" $clusterName
+  "namespace" $namespace
+  "managementPolicies" $managementPolicies
+  "labels" $labels
+  "helm" (dict
+    "providerConfigRef" $helmProviderConfigRef
+    "releaseName" ($spec.name | default $name)
+    "namespace" $namespace
+    "values" ($spec.values | default dict)
+    "overrideAllValues" ($spec.overrideAllValues | default dict)
+  )
+  "aws" (dict
+    "region" $awsRegion
+    "providerConfigRef" $awsProviderConfigRef
+    "permissionsBoundaryArn" ($aws.permissionsBoundaryArn | default "")
+    "rolePrefix" ($aws.rolePrefix | default "")
+    "tags" $awsTags
+  )
+  "serviceAccount" (dict
+    "name" "external-dns"
+    "namespace" $namespace
+  )
+}}

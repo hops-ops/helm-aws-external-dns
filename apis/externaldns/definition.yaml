@@ -1,0 +1,110 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: externaldns.helm.aws.hops.ops.com.ai
+spec:
+  group: helm.aws.hops.ops.com.ai
+  names:
+    kind: ExternalDNS
+    plural: externaldns
+  scope: Namespaced
+  defaultCompositeDeletePolicy: Foreground
+  versions:
+  - name: v1alpha1
+    referenceable: true
+    served: true
+    schema:
+      openAPIV3Schema:
+        description: ExternalDNS installs external-dns with AWS Pod Identity for Route53 DNS record management.
+        type: object
+        properties:
+          spec:
+            description: ExternalDNSSpec defines the desired state of ExternalDNS.
+            type: object
+            properties:
+              clusterName:
+                description: Name of the target cluster. Used for provider config defaults and resource naming.
+                type: string
+              managementPolicies:
+                description: Management policies for all composed resources. Defaults to ["*"].
+                type: array
+                items:
+                  type: string
+                default:
+                - "*"
+              labels:
+                description: Custom labels applied to all managed resources.
+                type: object
+                additionalProperties:
+                  type: string
+                x-kubernetes-preserve-unknown-fields: true
+              helmProviderConfigRef:
+                description: Reference to the Helm ProviderConfig. Defaults to clusterName.
+                type: object
+                properties:
+                  name:
+                    description: Name of the Helm ProviderConfig.
+                    type: string
+                  kind:
+                    description: Kind of the ProviderConfig. Defaults to ProviderConfig.
+                    type: string
+                    enum:
+                    - ProviderConfig
+                    - ClusterProviderConfig
+              awsProviderConfigRef:
+                description: Reference to the AWS ProviderConfig. Defaults to "default".
+                type: object
+                properties:
+                  name:
+                    description: Name of the AWS ProviderConfig.
+                    type: string
+                  kind:
+                    description: Kind of the ProviderConfig. Defaults to ProviderConfig.
+                    type: string
+              namespace:
+                description: Namespace for the Helm release. Defaults to external-dns.
+                type: string
+              name:
+                description: Helm release name. Defaults to the XR metadata.name.
+                type: string
+              values:
+                description: Helm values merged with defaults.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              overrideAllValues:
+                description: Helm values that replace all defaults.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              aws:
+                description: AWS configuration for Pod Identity.
+                type: object
+                properties:
+                  region:
+                    description: AWS region for the EKS cluster.
+                    type: string
+                  permissionsBoundaryArn:
+                    description: ARN of the IAM permissions boundary to apply to the role.
+                    type: string
+                  rolePrefix:
+                    description: Prefix for the IAM role name.
+                    type: string
+                  tags:
+                    description: Custom tags applied to AWS resources.
+                    type: object
+                    additionalProperties:
+                      type: string
+                    x-kubernetes-preserve-unknown-fields: true
+                required:
+                - region
+            required:
+            - clusterName
+            - aws
+          status:
+            description: ExternalDNSStatus defines the observed state.
+            type: object
+            properties:
+              ready:
+                description: Overall readiness.
+                type: boolean
+        required:
+        - spec

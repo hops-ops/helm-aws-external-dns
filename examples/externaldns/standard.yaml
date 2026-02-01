@@ -1,0 +1,21 @@
+apiVersion: helm.aws.hops.ops.com.ai/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: external-dns
+  namespace: default
+spec:
+  clusterName: production-cluster
+  namespace: external-dns
+  labels:
+    team: platform
+  values:
+    policy: sync
+    sources:
+      - service
+      - ingress
+      - istio-virtualservice
+  aws:
+    region: us-west-2
+    rolePrefix: prod-
+    tags:
+      environment: production

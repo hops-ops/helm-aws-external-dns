@@ -1,0 +1,49 @@
+# code: language=yaml
+#
+# Compute status values from observed state
+#
+
+# ==============================================================================
+# Extract observed state from composed resources
+# ==============================================================================
+{{- $observed := $.observed.resources | default dict }}
+
+# Check if helm-external-dns is ready
+{{- $helmExternalDNSObs := get $observed "helm-external-dns" | default dict }}
+{{- $helmExternalDNSResource := $helmExternalDNSObs.resource | default dict }}
+{{- $helmExternalDNSStatus := $helmExternalDNSResource.status | default dict }}
+{{- $helmExternalDNSConditions := $helmExternalDNSStatus.conditions | default list }}
+{{- $helmExternalDNSReady := false }}
+{{- range $cond := $helmExternalDNSConditions }}
+  {{- if and (eq $cond.type "Ready") (eq $cond.status "True") }}
+    {{- $helmExternalDNSReady = true }}
+  {{- end }}
+{{- end }}
+
+# Check if pod-identity is ready
+{{- $podIdentityObs := get $observed "pod-identity" | default dict }}
+{{- $podIdentityResource := $podIdentityObs.resource | default dict }}
+{{- $podIdentityStatus := $podIdentityResource.status | default dict }}
+{{- $podIdentityConditions := $podIdentityStatus.conditions | default list }}
+{{- $podIdentityReady := false }}
+{{- range $cond := $podIdentityConditions }}
+  {{- if and (eq $cond.type "Ready") (eq $cond.status "True") }}
+    {{- $podIdentityReady = true }}
+  {{- end }}
+{{- end }}
+
+# ==============================================================================
+# Compute status output
+# ==============================================================================
+
+# Ready state determined by function-auto-ready
+{{- $ready := false }}
+
+{{- $state = set $state "observed" (dict
+  "helmExternalDNS" (dict "ready" $helmExternalDNSReady)
+  "podIdentity" (dict "ready" $podIdentityReady)
+) }}
+
+{{- $state = set $state "status" (dict
+  "ready" $ready
+) }}

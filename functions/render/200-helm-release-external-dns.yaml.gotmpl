@@ -1,0 +1,29 @@
+# code: language=yaml
+#
+# Compose the base helm.hops.ops.com.ai/ExternalDNS XRD
+#
+
+---
+apiVersion: helm.hops.ops.com.ai/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: {{ $state.name }}
+  annotations:
+    {{ setResourceNameAnnotation "helm-external-dns" }}
+  labels: {{ $state.labels | toJson }}
+spec:
+  managementPolicies: {{ $state.managementPolicies | toJson }}
+  clusterName: {{ $state.clusterName }}
+  labels: {{ $state.labels | toJson }}
+  providerConfigRef:
+    name: {{ $state.helm.providerConfigRef.name }}
+    kind: {{ $state.helm.providerConfigRef.kind }}
+  namespace: {{ $state.helm.namespace }}
+  name: {{ $state.helm.releaseName }}
+  {{- if gt (len $state.helm.overrideAllValues) 0 }}
+  overrideAllValues:
+    {{- toYaml $state.helm.overrideAllValues | nindent 4 }}
+  {{- else if gt (len $state.helm.values) 0 }}
+  values:
+    {{- toYaml $state.helm.values | nindent 4 }}
+  {{- end }}

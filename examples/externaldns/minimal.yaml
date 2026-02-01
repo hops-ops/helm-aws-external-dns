@@ -1,0 +1,9 @@
+apiVersion: helm.aws.hops.ops.com.ai/v1alpha1
+kind: ExternalDNS
+metadata:
+  name: external-dns
+  namespace: default
+spec:
+  clusterName: my-cluster
+  aws:
+    region: us-east-1
